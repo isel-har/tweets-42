@@ -11,7 +11,6 @@ import string
 import nltk
 
 
-
 nltk.download("averaged_perceptron_tagger_eng")
 nltk.download("wordnet")
 nltk.download("punkt_tab")
@@ -206,7 +205,6 @@ class Preprocessor:
         }
         return methods_dict[key](tokenized_sentences)
     
-    
     @classmethod
     def process(self, raw_sentences : list, processing_params: dict):
 
@@ -220,3 +218,24 @@ class Preprocessor:
             tokenized_sentences = self.processing_methods(processing_params['method'], tokenized_sentences)
 
         return self.vectorize(tokenized_sentences, processing_params['vectorization'])
+
+
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+
+
+# class Cleaner()
+
+
+class NLProcessor:
+
+
+    def __init__(self):
+        ...
+    
+    def fit(self, X):
+        ...
+
+
+    def transform(self, X):
+        ...
