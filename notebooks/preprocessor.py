@@ -223,11 +223,17 @@ class Preprocessor:
         return self.vectorize(tokenized_sentences, processing_params['vectorization'])
 
 
+
+
+
+
+
+
+
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 
 
-# class Cleaner()
 
 
 class NLProcessor:
@@ -236,7 +242,12 @@ class NLProcessor:
         'bow':CountVectorizer,
         'binary':CountVectorizer,
         'tf-idf':TfidfVectorizer,
-        # 'word2vec':
+        # 'word2vec': word
+    }
+    method_objects = {
+        'stem':PorterStemmer(),
+        'stem+':SnowballStemmer(language='english'),
+        'lemmatize':WordNetLemmatizer()
     }
 
     def __init__(self,
@@ -245,14 +256,44 @@ class NLProcessor:
             stop_words=False,
             n_grams=1,
         ):
-        self.vectorizer = self.vect_classes.get(vectorization, None)
+        self.vectorizer = vectorization
         self.n_grams    = n_grams
         self.stop_words = stop_words
         self.method     = method
 
-
-    def fit(self, X):
+    def word2vec(self, tokens):
         ...
+
+    @classmethod
+    def clean(cls, tweets: list):
+        cleaned_tweets = []
+
+        for text in tweets:
+            text = contractions.fix(text)
+            text = text.lower()
+            text = text.translate(cls.punct_translator)
+            text = text.translate(cls.digit_translator)
+            text = text.strip()  # remove leading/trailing spaces
+            text = " ".join(text.split())  # remove duplicate spaces
+
+            cleaned_tweets.append(text)
+
+        return cleaned_tweets
+
+    def fit(self, X): # raw tweets
+        cleaned_tweests = self.clean(X)
+        tokens          = word_tokenize(cleaned_tweests)
+
+        method_class    = self.method_classes.get(self.method, None)
+        if not method_class:
+            raise Exception("method not allowed.")
+
+
+
+
+
+
+
         ## cleaning and tokenize
         ## fit the vectorizer only
 
