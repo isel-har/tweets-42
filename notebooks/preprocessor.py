@@ -10,6 +10,9 @@ import numpy as np
 import string
 import nltk
 
+from nltk.tokenize import word_tokenize
+
+from typing import Literal
 
 nltk.download("averaged_perceptron_tagger_eng")
 nltk.download("wordnet")
@@ -229,13 +232,33 @@ from sklearn.pipeline import Pipeline
 
 class NLProcessor:
 
+    vect_classes = {
+        'bow':CountVectorizer,
+        'binary':CountVectorizer,
+        'tf-idf':TfidfVectorizer,
+        # 'word2vec':
+    }
 
-    def __init__(self):
-        ...
-    
+    def __init__(self,
+            vectorization: Literal['bow', 'binary', 'tf-idf', 'word2vec'] = 'binary',
+            method : Literal['stem', 'stem+', 'lemmatize', None] = 'stem',
+            stop_words=False,
+            n_grams=1,
+        ):
+        self.vectorizer = self.vect_classes.get(vectorization, None)
+        self.n_grams    = n_grams
+        self.stop_words = stop_words
+        self.method     = method
+
+
     def fit(self, X):
         ...
+        ## cleaning and tokenize
+        ## fit the vectorizer only
 
 
     def transform(self, X):
+
+        ## same step before  vectorization
+        ## transform the vectorizer
         ...
