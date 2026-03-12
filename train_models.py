@@ -3,7 +3,11 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score
 from sklearn.base import clone
+
+
+import pandas as pd
 import joblib
 
 try:
@@ -39,7 +43,7 @@ try:
         best_params[key] = {}
 
     X = joblib.load(datasets_paths[3][0])
-    y = joblib.load('data/train_labels.pkl')
+    y_train = joblib.load('data/train_labels.pkl')
 
     for esti_name, param_grid in grid_params_dict.items():
 
@@ -50,7 +54,7 @@ try:
             cv=5,
             n_jobs=-1
         )
-        grid_search.fit(X, y)
+        grid_search.fit(X, y_train)
 
         print(f"{esti_name}:")
         print(f"Best Alpha: {grid_search.best_params_}")
@@ -58,21 +62,30 @@ try:
         print("_________________________________________________")
         best_params[esti_name] = grid_search.best_params_
 
-### set params here!
-## then fit for each dataset
 
-## pop the dataset used for gridsearch
+
+    del X
+    df_test = pd.read_csv('data/test.csv')
+    X_test = df_test["tweet"].values.tolist()
+    y_test = df_test["sentiment"].values.tolist()
+
+
     for path, approache in datasets_paths:
         
-        X = joblib.load(path)
+        X_train = joblib.load(path)
         print(f"{approache[0]} + {approache[1]}")
-        # for name, params in best_params.items():
-            
-        #     models[name].set_params(**params)
-        #     copy = clone(models[name])
-               
+        for name, params in best_params.items():
+            print(f"machine learning algorithm : {name}")
+            models[name].set_params(**params)
+            copy_model = clone(models[name])
+            copy_model.fit(X, y)
 
 
+            y_pred = copy_model.predict(X_test)
+            try:
+                print(f"accuracy score : {accuracy_score(y_pred=y_pred, y_true=y_test)}")
+            except Exception as e:
+                print("f accuracy :", str(e))
 
 
 
