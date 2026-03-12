@@ -1,18 +1,17 @@
-# from gensim.models import Word2Vec
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from nltk.stem import WordNetLemmatizer, PorterStemmer, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-import gensim.downloader as api
 from nltk.corpus import wordnet
+import gensim.downloader as api
+from nltk.util import ngrams
 import contractions
 import numpy as np
 import string
 import nltk
 
-from nltk.tokenize import word_tokenize
+# from typing import Literal
 
-from typing import Literal
 
 nltk.download("averaged_perceptron_tagger_eng")
 nltk.download("wordnet")
@@ -22,27 +21,16 @@ nltk.download("stopwords")
 # nltk.download('averaged_perceptron_tagger')
 # nltk.download('punkt')
 
-
 class Preprocessor:
     # spell = SpellChecker()
-    stemmer = PorterStemmer()
+    stemmer      = PorterStemmer()
     stemmer_plus = SnowballStemmer(language="english")
-    lemmatizer = WordNetLemmatizer()
+    lemmatizer   = WordNetLemmatizer()
 
-    stop_words = set(stopwords.words("english"))
+    stop_words   = set(stopwords.words("english"))
 
     punct_translator = str.maketrans("", "", string.punctuation)
     digit_translator = str.maketrans("", "", string.digits)
-
-    # vectorization_methods = ['tf-idf', 'bow', 'binary','word2vec']
-
-    # def __init__(self, vectorization='tf-idf', vector_size=100):
-    #     self.vectorization = vectorization.lower()
-    #     self.processed  = False
-    #     self.vectorizer = None
-    #     self.vector_size = vector_size
-
-    # ________________________________________________________
 
     @staticmethod
     def get_wordnet_pos(tag):
@@ -58,7 +46,7 @@ class Preprocessor:
             return wordnet.NOUN
 
     @classmethod
-    def clean(cls, tweets: list):
+    def clean(cls, tweets: list, show_trans):
         cleaned_tweets = []
 
         for text in tweets:
@@ -71,20 +59,28 @@ class Preprocessor:
 
             cleaned_tweets.append(text)
 
+        if show_trans:
+            print("after cleaning")
+            print(cleaned_tweets[:20])
+
         return cleaned_tweets
 
     @classmethod
-    def tokenize(cls, cleaned_tweets: list):
+    def tokenize(cls, cleaned_tweets: list, n_grams, show_trans):
         tokenized_tweets = []
 
         for text in cleaned_tweets:
             tokens = word_tokenize(text)
+            # t_grams = list(ngrams(tokens, n_grams))
             tokenized_tweets.append(tokens)
 
+        if show_trans:
+            print("after tokenization")
+            print(tokenized_tweets[:20])
         return tokenized_tweets
 
     @classmethod
-    def stopwords(cls, tokenized_sentences: list):
+    def stopwords(cls, tokenized_sentences: list, show_trans):
         # The use of 'cls.stop_words' correctly references the class attribute.
         filtered_tokens = []
 
@@ -93,10 +89,14 @@ class Preprocessor:
             filtered = [word for word in tokens if word not in cls.stop_words]
             filtered_tokens.append(filtered)
 
+        if show_trans:
+            print("after stop words")
+            print(filtered_tokens[:20])
+
         return filtered_tokens
 
     @classmethod
-    def lemmatize(cls, tokenized_sentences: list):
+    def lemmatize(cls, tokenized_sentences: list, show_trans):
         standardized_tokens = []
 
         for tokens in tokenized_sentences:
@@ -109,6 +109,10 @@ class Preprocessor:
                 lemmas.append(lemma)
 
             standardized_tokens.append(lemmas)
+
+        if show_trans:
+            print("after lemmatization")
+            print(standardized_tokens[:20])
 
         return standardized_tokens
 
@@ -129,21 +133,30 @@ class Preprocessor:
     #     return corrected_tokens
 
     @classmethod
-    def stemming(cls, tokenized_tweets: list):
+    def stemming(cls, tokenized_tweets: list, show_trans):
         stems_tokens = []
 
         for tokens in tokenized_tweets:
             stems = [cls.stemmer.stem(w) for w in tokens]
             stems_tokens.append(stems)
+
+        if show_trans:
+            print("after stemming")
+            print(stems_tokens[:20])
         return stems_tokens
 
     @classmethod
-    def stemming_plus(cls, tokenized_tweets: list):
+    def stemming_plus(cls, tokenized_tweets: list, show_trans):
         stems_tokens = []
 
         for tokens in tokenized_tweets:
             stems = [cls.stemmer_plus.stem(w) for w in tokens]
             stems_tokens.append(stems)
+
+        if show_trans:
+            print("after stemming")
+            print(stems_tokens[:20])
+
         return stems_tokens
 
     @staticmethod
@@ -199,107 +212,26 @@ class Preprocessor:
 
 
     @classmethod
-    def processing_methods(self, key, tokenized_sentences):
+    def processing_methods(self, key, tokenized_sentences, show_trans):
 
         methods_dict = {
             'lemmatize': self.lemmatize,
             'stem': self.stemming,
             'stem+': self.stemming_plus,
         }
-        return methods_dict[key](tokenized_sentences)
+        return methods_dict[key](tokenized_sentences, show_trans)
     
     @classmethod
-    def process(self, raw_sentences : list, processing_params: dict):
+    def process(self, raws: list, processing_params: dict, n_grams=1, show_trans=True):
 
-        cleaned_sentences = self.clean(raw_sentences)
-        tokenized_sentences = self.tokenize(cleaned_sentences)
+        cleaned = self.clean(raws, show_trans)
+        tokenized = self.tokenize(cleaned, n_grams, show_trans)
 
         if  'stopwords' in processing_params and processing_params['stopwords']:
-            tokenized_sentences = self.stopwords(tokenized_sentences)
+            tokenized = self.stopwords(tokenized, show_trans)
 
         if 'method' in processing_params and processing_params['method']:
-            tokenized_sentences = self.processing_methods(processing_params['method'], tokenized_sentences)
+            tokenized = self.processing_methods(processing_params['method'], tokenized, show_trans)
 
-        return self.vectorize(tokenized_sentences, processing_params['vectorization'])
+        return self.vectorize(tokenized, processing_params['vectorization'])
 
-
-
-
-
-
-
-
-
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-
-
-
-
-class NLProcessor:
-
-    vect_classes = {
-        'bow':CountVectorizer,
-        'binary':CountVectorizer,
-        'tf-idf':TfidfVectorizer,
-        # 'word2vec': word
-    }
-    method_objects = {
-        'stem':PorterStemmer(),
-        'stem+':SnowballStemmer(language='english'),
-        'lemmatize':WordNetLemmatizer()
-    }
-
-    def __init__(self,
-            vectorization: Literal['bow', 'binary', 'tf-idf', 'word2vec'] = 'binary',
-            method : Literal['stem', 'stem+', 'lemmatize', None] = 'stem',
-            stop_words=False,
-            n_grams=1,
-        ):
-        self.vectorizer = vectorization
-        self.n_grams    = n_grams
-        self.stop_words = stop_words
-        self.method     = method
-
-    def word2vec(self, tokens):
-        ...
-
-    @classmethod
-    def clean(cls, tweets: list):
-        cleaned_tweets = []
-
-        for text in tweets:
-            text = contractions.fix(text)
-            text = text.lower()
-            text = text.translate(cls.punct_translator)
-            text = text.translate(cls.digit_translator)
-            text = text.strip()  # remove leading/trailing spaces
-            text = " ".join(text.split())  # remove duplicate spaces
-
-            cleaned_tweets.append(text)
-
-        return cleaned_tweets
-
-    def fit(self, X): # raw tweets
-        cleaned_tweests = self.clean(X)
-        tokens          = word_tokenize(cleaned_tweests)
-
-        method_class    = self.method_classes.get(self.method, None)
-        if not method_class:
-            raise Exception("method not allowed.")
-
-
-
-
-
-
-
-        ## cleaning and tokenize
-        ## fit the vectorizer only
-
-
-    def transform(self, X):
-
-        ## same step before  vectorization
-        ## transform the vectorizer
-        ...

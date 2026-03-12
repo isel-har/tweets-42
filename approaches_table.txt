@@ -1,0 +1,12 @@
+vectorization : binary + method : None
+vectorization : binary + method : stem
+vectorization : binary + method : lemmatize
+vectorization : binary + method : stem+
+vectorization : bow + method : None
+vectorization : bow + method : stem
+vectorization : bow + method : lemmatize
+vectorization : bow + method : stem+
+vectorization : tf-idf + method : None
+vectorization : tf-idf + method : stem
+vectorization : tf-idf + method : lemmatize
+vectorization : tf-idf + method : stem+
