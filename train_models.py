@@ -5,7 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import accuracy_score
 from sklearn.base import clone
-
+from lib.preprocessor import Preprocessor
 
 import pandas as pd
 import joblib
@@ -38,11 +38,11 @@ try:
     }
 
 
-    best_params = {}
+    best_estimators = {}
     for key, val in models.items():
-        best_params[key] = {}
+        best_estimators[key] = None
 
-    X = joblib.load(datasets_paths[3][0])
+    X       = joblib.load(datasets_paths[3][0])
     y_train = joblib.load('data/train_labels.pkl')
 
     for esti_name, param_grid in grid_params_dict.items():
@@ -60,11 +60,11 @@ try:
         print(f"Best Alpha: {grid_search.best_params_}")
         print(f"Best Score: {grid_search.best_score_:.4f}")
         print("_________________________________________________")
-        best_params[esti_name] = grid_search.best_params_
-
+        best_estimators[esti_name] = grid_search.best_estimator_
 
 
     del X
+
     df_test = pd.read_csv('data/test.csv')
     X_test = df_test["tweet"].values.tolist()
     y_test = df_test["sentiment"].values.tolist()
@@ -73,23 +73,32 @@ try:
     for path, approache in datasets_paths:
         
         X_train = joblib.load(path)
+
         print(f"{approache[0]} + {approache[1]}")
-        for name, params in best_params.items():
+
+        for name, model in best_estimators.items():
+
             print(f"machine learning algorithm : {name}")
-            models[name].set_params(**params)
-            copy_model = clone(models[name])
-            copy_model.fit(X, y)
 
+            copy_model = clone(model)  # already has best params
+            copy_model.fit(X_train, y_train)
 
-            y_pred = copy_model.predict(X_test)
-            try:
-                print(f"accuracy score : {accuracy_score(y_pred=y_pred, y_true=y_test)}")
-            except Exception as e:
-                print("f accuracy :", str(e))
+            print("fit done!")
+            # X_test_processed = Preprocessor.process(
+            #     raws=X_test,
+            #     processing_params={
+            #         "vectorization": approache[0],
+            #         "method": None if approache[1] == 'only' else approache[1],
+            #     },
+            #     show_trans=False
+            # )
 
-
+            # y_pred = copy_model.predict(X_test_processed)
+            # try:
+            #     print(f"accuracy score : {accuracy_score(y_pred=y_pred, y_true=y_test)}")
+            # except Exception as e:
+            #     print("f accuracy :", str(e))
 
 
 except Exception as e:
     print("error :", str(e))
-#     # if sco
