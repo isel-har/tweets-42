@@ -10,6 +10,9 @@ import numpy as np
 import string
 import nltk
 
+
+import pkg_resources
+from symspellpy import SymSpell, Verbosity
 # from typing import Literal
 
 
@@ -22,7 +25,14 @@ nltk.download("stopwords")
 # nltk.download('punkt')
 
 class Preprocessor:
-    # spell = SpellChecker()
+
+    sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
+    dictionary_path = pkg_resources.resource_filename(
+        "symspellpy", "frequency_dictionary_en_82_765.txt"
+    )
+    sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
+
+
     stemmer      = PorterStemmer()
     stemmer_plus = SnowballStemmer(language="english")
     lemmatizer   = WordNetLemmatizer()
@@ -31,6 +41,7 @@ class Preprocessor:
 
     punct_translator = str.maketrans("", "", string.punctuation)
     digit_translator = str.maketrans("", "", string.digits)
+
 
     @staticmethod
     def get_wordnet_pos(tag):
@@ -66,12 +77,11 @@ class Preprocessor:
         return cleaned_tweets
 
     @classmethod
-    def tokenize(cls, cleaned_tweets: list, n_grams, show_trans):
+    def tokenize(cls, cleaned_tweets: list, show_trans):
         tokenized_tweets = []
 
         for text in cleaned_tweets:
             tokens = word_tokenize(text)
-            # t_grams = list(ngrams(tokens, n_grams))
             tokenized_tweets.append(tokens)
 
         if show_trans:
@@ -116,21 +126,28 @@ class Preprocessor:
 
         return standardized_tokens
 
-    # @classmethod
-    # def spelling(cls, tokenized_tweets: list):
-    #     corrected_tokens = []
+    @classmethod
+    def spelling(cls, tokenized_tweets: list, show_trans: bool):
+        corrected_tweets = []
 
-    #     for tokens in tokenized_tweets:
-    #         corrected_text = []
-    #         for word in tokens:
-    #             corrected_word = cls.spell.correction(word)
-    #             corrected_tokens.append(
-    #                 corrected_word if corrected_word is not None else ""
-    #             )
+        for tokens in tokenized_tweets:
+            corrected_text = []
+            for word in tokens:
+                # SymSpell lookup returns a list of suggestions
+                suggestions = cls.sym_spell.lookup(
+                    word, Verbosity.CLOSEST, max_edit_distance=2
+                )
+                
+                # If suggestions exist, take the top one; otherwise, keep original word
+                corrected_word = suggestions[0].term if suggestions else word
+                corrected_text.append(corrected_word)
 
-    #         corrected_tokens.append(corrected_text)
-
-    #     return corrected_tokens
+            corrected_tweets.append(corrected_text)
+            
+        if show_trans:
+            print(corrected_tweets)
+            
+        return corrected_tweets
 
     @classmethod
     def stemming(cls, tokenized_tweets: list, show_trans):
@@ -157,30 +174,36 @@ class Preprocessor:
             print("after stemming")
             print(stems_tokens[:20])
 
+
+
         return stems_tokens
 
     @staticmethod
     def identity(x):
         return x
 
+
     @classmethod
     def wordcounts(self, standardized_tokens: list, vectorization):
-        self.vectorizer = CountVectorizer(
+        vectorizer = CountVectorizer(
             binary=(vectorization == "binary"),
             tokenizer=self.identity,
             preprocessor=self.identity,
             token_pattern=None,
         )
-        vector = self.vectorizer.fit_transform(standardized_tokens)
-        return np.array(vector.toarray())
+        vector = vectorizer.fit_transform(standardized_tokens)
+        return np.array(vector.toarray()), vectorizer
+
 
     @classmethod
     def tf_idf(self, standardized_tokens: list):
-        self.vectorizer = TfidfVectorizer(
+        vectorizer = TfidfVectorizer(
             tokenizer=self.identity, preprocessor=self.identity, token_pattern=None
         )
-        vector = self.vectorizer.fit_transform(standardized_tokens)
-        return np.array(vector.toarray())
+        vector = vectorizer.fit_transform(standardized_tokens)
+
+        return np.array(vector.toarray()), vectorizer
+
 
     @classmethod
     def sentence_embedding(self, sentence, model):
@@ -188,6 +211,7 @@ class Preprocessor:
         if not vectors:
             return np.zeros(25)
         return np.mean(vectors, axis=0)
+
 
     @classmethod
     def word2vec(self, tokenized_sentences: list):
@@ -199,7 +223,7 @@ class Preprocessor:
                 for sentence in tokenized_sentences
             ]
         )
-        return X
+        return X, None
 
     @classmethod
     def vectorize(self, standardized_tokens: list, vectorization="tf-idf"):
@@ -214,24 +238,39 @@ class Preprocessor:
     @classmethod
     def processing_methods(self, key, tokenized_sentences, show_trans):
 
+        if key =='lem+misspelling':
+            return self.spelling(
+                self.lemmatize(tokenized_sentences, show_trans),
+                show_trans
+            )
+        
         methods_dict = {
             'lemmatize': self.lemmatize,
             'stem': self.stemming,
             'stem+': self.stemming_plus,
+            'misspelling':self.spelling,
         }
         return methods_dict[key](tokenized_sentences, show_trans)
     
     @classmethod
-    def process(self, raws: list, processing_params: dict, n_grams=1, show_trans=True):
+    def process(self, raws: list,
+        processing_params: dict,
+        misspellings=False,
+        stopwords=False,
+        show_trans=True,
+        vectorizer=None):
 
         cleaned = self.clean(raws, show_trans)
-        tokenized = self.tokenize(cleaned, n_grams, show_trans)
+        tokenized = self.tokenize(cleaned, show_trans)
 
-        if  'stopwords' in processing_params and processing_params['stopwords']:
+        if stopwords:
             tokenized = self.stopwords(tokenized, show_trans)
 
         if 'method' in processing_params and processing_params['method']:
             tokenized = self.processing_methods(processing_params['method'], tokenized, show_trans)
 
-        return self.vectorize(tokenized, processing_params['vectorization'])
+        if vectorizer is None:
+            return self.vectorize(tokenized, processing_params['vectorization'])
 
+        vectors = np.array(vectorizer.transform(tokenized).toarray())
+        return vectors, vectorizer

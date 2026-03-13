@@ -23,7 +23,7 @@ for path, approache in datasets_paths:
 
     top_10 = sorted(pairs, key=lambda x: x[2], reverse=True)[:10]
     
-    print(f"top 10 similar tweets using {approache[0]} + {approache[1]}")
+    print(f"top 10 similar tweets using {approache[0].__class__.__name__} + {approache[1]}")
     for i, j, score in top_10:
         print(f"[{score:.3f}]")
         print("Tweet A:", tweets[i])

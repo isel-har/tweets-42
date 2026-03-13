@@ -24,7 +24,6 @@ class DataPreparation:
         return df.sample(frac=1)
 
 
-
     @staticmethod
     def save_train_test_split(df, save=True, index=False):
         
@@ -33,5 +32,6 @@ class DataPreparation:
         if save:
             df_train.to_csv('data/train.csv', index=index)
             df_test.to_csv('data/test.csv', index=index)
+            return df_train, None
 
-        return df_train
+        return df_train, df_test
