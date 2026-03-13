@@ -4,7 +4,6 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 import gensim.downloader as api
-from nltk.util import ngrams
 import contractions
 import numpy as np
 import string
@@ -13,6 +12,7 @@ import nltk
 
 import pkg_resources
 from symspellpy import SymSpell, Verbosity
+# from nltk.util import ngrams
 # from typing import Literal
 
 

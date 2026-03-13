@@ -1,0 +1,6 @@
+contractions==0.1.73
+symspellpy==6.9.0
+pandas==2.3.3
+joblib==1.5.3
+gensim==4.4.0
+nltk==3.9.3

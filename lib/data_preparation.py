@@ -1,3 +1,8 @@
+# import sys
+# import os
+# sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), '../')))
+
+
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
@@ -7,9 +12,9 @@ class DataPreparation:
     def load():
 
         tweets_paths = {
-            1:'data/raw/processedPositive.csv',
-            -1:'data/raw/processedNegative.csv',
-            0:'data/raw/processedNeutral.csv'
+            1:'../data/raw/processedPositive.csv',
+            -1:'../data/raw/processedNegative.csv',
+            0:'../data/raw/processedNeutral.csv'
         }
 
         tweets = []
@@ -30,8 +35,8 @@ class DataPreparation:
         df_train, df_test = train_test_split(df, test_size=0.2)
 
         if save:
-            df_train.to_csv('data/train.csv', index=index)
-            df_test.to_csv('data/test.csv', index=index)
+            df_train.to_csv('../data/train.csv', index=index)
+            df_test.to_csv('../data/test.csv', index=index)
             return df_train, None
 
         return df_train, df_test
