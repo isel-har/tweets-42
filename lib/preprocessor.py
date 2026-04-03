@@ -206,24 +206,33 @@ class Preprocessor:
 
 
     @classmethod
-    def sentence_embedding(self, sentence, model):
+    def sentence_embedding(cls, sentence, model):
+        # 1. Access the vector size dynamically from the model (e.g., 300)
+        vector_size = model.vector_size
+        # 2. Extract vectors only for words that exist in the Google News vocabulary
         vectors = [model[w] for w in sentence if w in model]
+        
+        # 3. Handle cases where no words in the sentence match the vocabulary
         if not vectors:
-            return np.zeros(25)
+            return np.zeros(vector_size)
+            
+        # 4. Average the word vectors to create one representative sentence vector
         return np.mean(vectors, axis=0)
 
-
     @classmethod
-    def word2vec(self, tokenized_sentences: list):
-        model = api.load("glove-twitter-25")
+    def word2vec(cls, tokenized_sentences: list):
+        # Load the 300-dimension Google News model
+        print("Loading Word2Vec Google News (1.5GB)...")
+        model = api.load('word2vec-google-news-300')
 
+        # Convert each sentence into a single 300-d vector
         X = np.array(
             [
-                self.sentence_embedding(sentence, model)
+                cls.sentence_embedding(sentence, model)
                 for sentence in tokenized_sentences
             ]
         )
-        return X, None
+        return X, model
 
     @classmethod
     def vectorize(self, standardized_tokens: list, vectorization="tf-idf"):
