@@ -1,5 +1,5 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from nltk.stem import WordNetLemmatizer, PorterStemmer, SnowballStemmer
+from nltk.stem import WordNetLemmatizer, PorterStemmer#, SnowballStemmer#,PorterStemmer
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet
@@ -33,9 +33,8 @@ class Preprocessor:
     sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
 
 
-    stemmer      = PorterStemmer()
-    stemmer_plus = SnowballStemmer(language="english")
-    lemmatizer   = WordNetLemmatizer()
+    stemmer    = PorterStemmer()
+    lemmatizer = WordNetLemmatizer()
 
     stop_words   = set(stopwords.words("english"))
 
@@ -162,26 +161,23 @@ class Preprocessor:
             print(stems_tokens[:20])
         return stems_tokens
 
-    @classmethod
-    def stemming_plus(cls, tokenized_tweets: list, show_trans):
-        stems_tokens = []
+    # @classmethod
+    # def stemming_plus(cls, tokenized_tweets: list, show_trans):
+    #     stems_tokens = []
 
-        for tokens in tokenized_tweets:
-            stems = [cls.stemmer_plus.stem(w) for w in tokens]
-            stems_tokens.append(stems)
+    #     for tokens in tokenized_tweets:
+    #         stems = [cls.stemmer_plus.stem(w) for w in tokens]
+    #         stems_tokens.append(stems)
 
-        if show_trans:
-            print("after stemming")
-            print(stems_tokens[:20])
+    #     if show_trans:
+    #         print("after stemming")
+    #         print(stems_tokens[:20])
+    #     return stems_tokens
 
-
-
-        return stems_tokens
 
     @staticmethod
     def identity(x):
         return x
-
 
     @classmethod
     def wordcounts(self, standardized_tokens: list, vectorization):
@@ -253,11 +249,13 @@ class Preprocessor:
                 show_trans
             )
         
+        if key == 'stem+':
+            return self.stemming(self.stopwords(tokenized_sentences, show_trans), show_trans)
+
         methods_dict = {
             'lemmatize': self.lemmatize,
             'stem': self.stemming,
-            'stem+': self.stemming_plus,
-            'misspelling':self.spelling,
+            'misspelling':self.spelling
         }
         return methods_dict[key](tokenized_sentences, show_trans)
     
